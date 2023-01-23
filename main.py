@@ -27,16 +27,15 @@ def check_link(link):
 def check_methods(link):
     methods = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS',
                'TRACE', 'PATCH']
-    available_methods = []
-    for method in methods:
-        try:
-            response = requests.request(method, link)
-            if response.status_code != 405:
-                available_methods.append(method)
-        except requests.exceptions.RequestException as e:
-            print(f"An error occurred while checking {method} method for {link}. Error: {e}")
+    available_methods = list(filter(lambda method: method_status(link,method) != 405, methods))
     return available_methods
 
+def method_status(link,method):
+    try:
+        response = requests.request(method, link)
+        return response.status_code
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred while checking {method} method for {link}. Error: {e}")
 
 if __name__ == "__main__":
     main()
