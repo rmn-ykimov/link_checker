@@ -1,62 +1,105 @@
 import json
-import re
 import requests
+import logging
+from urllib.parse import urlparse
 
-# This function validates if the given link is valid, it is intended to use only for http and https protocols
-def validate_link(link):
-    # Regular expression pattern for http and https
-    pattern = re.compile(r'^https?://')
-    # check if the link is valid or not
-    if not pattern.match(link):
-        # If the link is not valid, raise an exception
-        raise Exception(f"The string {link} is not a valid link.")
-    return True
+logger = logging.getLogger()
+logger.setLevel(logging.WARNING)
 
-# This function checks available methods on the given link
-def check_methods(link):
-    # List of all possible http methods
-    methods = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
-    # Initialize an empty list to store available methods
-    available_methods = []
-    for method in methods:
+
+class LinkChecker:
+    """
+    Class to validate links and check available methods on them.
+    """
+
+    def __init__(self):
+        self.methods = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT',
+                        'OPTIONS', 'TRACE', 'PATCH']
+
+    def validate_link(self, link: str) -> bool:
+        """
+        Validate if the link is valid or not, it is intended to use only for
+        http and https protocols :param link: link to be validated :return:
+        True if valid otherwise raises an exception
+        """
+        parsed_url = urlparse(link)
+        # check if the link is valid or not
+        if not parsed_url.scheme or not parsed_url.netloc:
+            raise Exception(f"The string {link} is not a valid link.")
+        if parsed_url.scheme not in ['http', 'https']:
+            raise Exception(f"The link {link} is not a valid http or https "
+                            f"protocol link.")
+        return True
+
+    def check_methods(self, link: str) -> list:
+        """
+        Check available methods on a link.
+        :param link: Link to check methods on
+        :return: List of available methods
+        """
+        available_methods = []
+        for method in self.methods:
+            try:
+                status = self.check_method_status(link, method)
+                if status != 405:
+                    available_methods.append(method)
+            except Exception as e:
+                logger.error(f"An error occurred: {e}")
+        return available_methods
+
+    def check_method_status(self, link: str, method: str) -> int:
+        """
+        Check the status of a method on a link.
+        :param link: Link to check method on
+        :param method: Method to check
+        :return: HTTP status code of the method
+        """
         try:
-            status = check_method_status(link, method)
-            # if the status code is not 405, method is considered as available
-            if status != 405:
-                available_methods.append(method)
-        except Exception as e:
-            print(f"An error occurred: {e}")
-    return available_methods
+            response = requests.request(method, link)
+            if response.status_code != 200:
+                raise Exception(
+                    f"Link returned status code {response.status_code}")
+            return response.status_code
+        except requests.exceptions.RequestException as e:
+            raise Exception(
+                f"An error occurred while checking {method} method for {link}."
+                f" Error: {e}")
 
-# This function checks the status of the given method on the given link
-def check_method_status(link, method):
-    try:
-        # send request to the link for the given method
-        response = requests.request(method, link)
-        # check if the response status code is not 200
-        if response.status_code != 200:
-            # Raise an exception if the status code is not 200
-            raise Exception(f"Link returned status code {response.status_code}")
-        return response.status_code
-    except requests.exceptions.RequestException as e:
-        # Raise an exception if an error occurs while making the request
-        raise Exception(f"An error occurred while checking {method} method for {link}. Error: {e}")
+    def check_link_reachability(self, link: str) -> None:
+        try:
+            response = requests.head(link, allow_redirects=True)
+            if response.status_code != 200:
+                raise Exception(f"The link {link} is not reachable.")
+        except requests.exceptions.RequestException as e:
+            raise Exception(
+                f"An error occurred while checking reachability of {link}. "
+                f"Error: {e}")
+
 
 def main():
+    """
+    Main function to run the program.
+    """
     links = input("Enter a list of links: ").split()
     if not links:
         print("The list of links is empty.")
         return
     result = {}
+    link_checker = LinkChecker()
     for link in links:
         try:
-            validate_link(link)
+            # Validate the link
+            link_checker.validate_link(link)
+            # Check if the link is reachable
+            link_checker.check_link_reachability(link)
             result[link] = {}
-            for method in check_methods(link):
-                result[link][method] = check_method_status(link, method)
+            for method in link_checker.check_methods(link):
+                result[link][method] = link_checker.check_method_status(link,
+                                                                        method)
         except Exception as e:
-            print(f"An error occurred: {e}")
+            logger.error(e)
     print(json.dumps(result, indent=4))
+
 
 if __name__ == "__main__":
     main()
