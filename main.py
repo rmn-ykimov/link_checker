@@ -1,7 +1,6 @@
 import re
 import requests
 
-
 def main():
     links = input("Enter a list of links: ").split()
     result = {}
@@ -9,11 +8,7 @@ def main():
         if not check_link(link):
             print(f"The string {link} is not a link.")
             continue
-        available_methods = check_methods(link)
-        if available_methods:
-            result[link] = available_methods
-        else:
-            print(f"No available methods for {link}")
+        result[link] = check_methods(link)
     if not result:
         print("No valid links found.")
     else:
@@ -38,8 +33,8 @@ def check_methods(link):
             response = requests.request(method, link)
             if response.status_code != 405:
                 available_methods.append(method)
-        except:
-            pass
+        except requests.exceptions.RequestException as e:
+            print(f"An error occurred while checking {method} method for {link}. Error: {e}")
     return available_methods
 
 
