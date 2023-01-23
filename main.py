@@ -9,7 +9,11 @@ def main():
         if not check_link(link):
             print(f"The string {link} is not a link.")
             continue
-        result[link] = check_methods(link)
+        available_methods = check_methods(link)
+        if available_methods:
+            result[link] = available_methods
+        else:
+            print(f"No available methods for {link}")
     if not result:
         print("No valid links found.")
     else:
@@ -26,8 +30,6 @@ def check_link(link):
 
 
 def check_methods(link):
-    if not check_link(link):
-        raise ValueError("The input to check_methods is not a valid link")
     methods = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS',
                'TRACE', 'PATCH']
     available_methods = []
