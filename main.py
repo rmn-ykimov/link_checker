@@ -6,11 +6,14 @@ def main():
     links = input("Enter a list of links: ").split()
     result = {}
     for link in links:
-        if check_link(link):
-            result[link] = check_methods(link)
-        else:
+        if not check_link(link):
             print(f"The string {link} is not a link.")
-    print(result)
+            continue
+        result[link] = check_methods(link)
+    if not result:
+        print("No valid links found.")
+    else:
+        print(result)
 
 
 def check_link(link):
