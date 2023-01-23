@@ -1,7 +1,6 @@
 import re
 import requests
 
-
 def main():
     links = input("Enter a list of links: ").split()
     result = {}
@@ -9,12 +8,14 @@ def main():
         if not check_link(link):
             print(f"The string {link} is not a link.")
             continue
-        result[link] = check_methods(link)
+        try:
+            result[link] = check_methods(link)
+        except requests.exceptions.RequestException as e:
+            print(f"An error occurred while checking {link}. Error: {e}")
     if not result:
         print("No valid links found.")
     else:
         print(result)
-
 
 def check_link(link):
     pattern = re.compile(r'^https?://')
