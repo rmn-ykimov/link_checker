@@ -1,6 +1,7 @@
 import re
 import requests
 
+
 def main():
     links = input("Enter a list of links: ").split()
     result = {}
@@ -8,14 +9,12 @@ def main():
         if not check_link(link):
             print(f"The string {link} is not a link.")
             continue
-        try:
-            result[link] = check_methods(link)
-        except requests.exceptions.RequestException as e:
-            print(f"An error occurred while checking {link}. Error: {e}")
+        result[link] = check_methods(link)
     if not result:
         print("No valid links found.")
     else:
         print(result)
+
 
 def check_link(link):
     pattern = re.compile(r'^https?://')
@@ -27,6 +26,8 @@ def check_link(link):
 
 
 def check_methods(link):
+    if not check_link(link):
+        raise ValueError("The input to check_methods is not a valid link")
     methods = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS',
                'TRACE', 'PATCH']
     available_methods = []
