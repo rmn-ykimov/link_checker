@@ -18,9 +18,9 @@ class LinkChecker:
 
     def validate_link(self, link: str) -> bool:
         """
-        Validate if the link is valid or not, it is intended to use only for
-        http and https protocols :param link: link to be validated :return:
-        True if valid otherwise raises an exception
+        Validate if the provided link is a valid and accessible URL.
+        :param link: The link to be validated.
+        :return: True if the link is valid and accessible, False otherwise.
         """
         parsed_url = urlparse(link)
         # check if the link is valid or not
@@ -31,21 +31,52 @@ class LinkChecker:
                             f"protocol link.")
         return True
 
-    def check_methods(self, link: str) -> list:
+    def check_link_reachability(self, link: str, timeout: int = 5) -> bool:
         """
-        Check available methods on a link.
-        :param link: Link to check methods on
-        :return: List of available methods
+        Check if the provided link is reachable.
+        :param link: The link to check reachability for.
+        :param timeout: The timeout for the requests in seconds.
+        :return: True if the link is reachable, False otherwise.
         """
-        available_methods = []
-        for method in self.methods:
-            try:
-                status = self.check_method_status(link, method)
-                if status != 405:
-                    available_methods.append(method)
-            except Exception as e:
-                logger.error(f"An error occurred: {e}")
-        return available_methods
+        try:
+            response = requests.head(link, allow_redirects=True,
+                                     timeout=timeout)
+            if response.ok:
+                self.check_redirection(response, link)
+                return True
+            else:
+                raise Exception(f"The link {link} is not reachable.")
+        except requests.exceptions.RequestException as e:
+            logger.error(
+                f"An error occurred while checking reachability of {link}. "
+                f"Error: {e}")
+            return False
+
+    def check_redirection(self, response, link):
+        """
+        Check if the provided link redirects to another page
+        :param response: The response of the link
+        :param link: The link to check redirection for
+        """
+        if response.status_code in [301, 302, 303, 307, 308]:
+            raise Exception(f"The link {link} redirects to another page.")
+
+    def check_methods(self, link: str, timeout: int = 5) -> list:
+            """
+            Check available methods on a link.
+            :param link: Link to check methods on
+            :param timeout: The timeout for the requests in seconds.
+            :return: List of available methods
+            """
+            available_methods = []
+            for method in self.methods:
+                try:
+                    response = requests.request(method, link, timeout=timeout)
+                    if response.status_code != 405:
+                        available_methods.append(method)
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"An error occurred: {e}")
+            return available_methods
 
     def check_method_status(self, link: str, method: str) -> int:
         """
@@ -64,13 +95,3 @@ class LinkChecker:
             raise Exception(
                 f"An error occurred while checking {method} method for {link}."
                 f" Error: {e}")
-
-    def check_link_reachability(self, link: str) -> None:
-        try:
-            response = requests.head(link, allow_redirects=True)
-            if response.status_code != 200:
-                raise Exception(f"The link {link} is not reachable.")
-        except requests.exceptions.RequestException as e:
-            raise Exception(
-                f"An error occurred while checking reachability of {link}. "
-                f"Error: {e}")
