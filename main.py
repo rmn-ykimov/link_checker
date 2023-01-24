@@ -1,104 +1,56 @@
-import json
-import requests
 import logging
-from urllib.parse import urlparse
 
-logger = logging.getLogger()
-logger.setLevel(logging.WARNING)
+import arg_parser
+import logging_module
+import result_handler
+from link_checker import LinkChecker
 
 
-class LinkChecker:
+def process_links(links, link_checker, result, logger):
     """
-    Class to validate links and check available methods on them.
+    Process a list of links by validating them, checking their reachability and
+    checking the available methods on them.
+    :param links: List of links
+    :param link_checker: LinkChecker object
+    :param result: Dictionary to store the results
+    :param logger: Logger object
     """
+    for link in links:
+        logging_module.handle_exception(
+            lambda: link_checker.validate_link(link), logger)
+        logging_module.handle_exception(
+            lambda: link_checker.check_link_reachability(link),
+            logger)
 
-    def __init__(self):
-        self.methods = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT',
-                        'OPTIONS', 'TRACE', 'PATCH']
-
-    def validate_link(self, link: str) -> bool:
-        """
-        Validate if the link is valid or not, it is intended to use only for
-        http and https protocols :param link: link to be validated :return:
-        True if valid otherwise raises an exception
-        """
-        parsed_url = urlparse(link)
-        # check if the link is valid or not
-        if not parsed_url.scheme or not parsed_url.netloc:
-            raise Exception(f"The string {link} is not a valid link.")
-        if parsed_url.scheme not in ['http', 'https']:
-            raise Exception(f"The link {link} is not a valid http or https "
-                            f"protocol link.")
-        return True
-
-    def check_methods(self, link: str) -> list:
-        """
-        Check available methods on a link.
-        :param link: Link to check methods on
-        :return: List of available methods
-        """
-        available_methods = []
-        for method in self.methods:
-            try:
-                status = self.check_method_status(link, method)
-                if status != 405:
-                    available_methods.append(method)
-            except Exception as e:
-                logger.error(f"An error occurred: {e}")
-        return available_methods
-
-    def check_method_status(self, link: str, method: str) -> int:
-        """
-        Check the status of a method on a link.
-        :param link: Link to check method on
-        :param method: Method to check
-        :return: HTTP status code of the method
-        """
-        try:
-            response = requests.request(method, link)
-            if response.status_code != 200:
-                raise Exception(
-                    f"Link returned status code {response.status_code}")
-            return response.status_code
-        except requests.exceptions.RequestException as e:
-            raise Exception(
-                f"An error occurred while checking {method} method for {link}."
-                f" Error: {e}")
-
-    def check_link_reachability(self, link: str) -> None:
-        try:
-            response = requests.head(link, allow_redirects=True)
-            if response.status_code != 200:
-                raise Exception(f"The link {link} is not reachable.")
-        except requests.exceptions.RequestException as e:
-            raise Exception(
-                f"An error occurred while checking reachability of {link}. "
-                f"Error: {e}")
+        result[link] = {}
+        for method in link_checker.check_methods(link):
+            result[link][method] = link_checker.check_method_status(link,
+                                                                    method)
 
 
 def main():
     """
     Main function to run the program.
     """
-    links = input("Enter a list of links: ").split()
-    if not links:
+    args = arg_parser.parse_args()
+
+    links_to_check = args.links
+    log_level = args.loglevel
+    output_file = args.output
+
+    logger = logging.getLogger()
+    logger.setLevel(log_level)
+    if not links_to_check:
         print("The list of links is empty.")
         return
-    result = {}
+
+    results = {}
     link_checker = LinkChecker()
-    for link in links:
-        try:
-            # Validate the link
-            link_checker.validate_link(link)
-            # Check if the link is reachable
-            link_checker.check_link_reachability(link)
-            result[link] = {}
-            for method in link_checker.check_methods(link):
-                result[link][method] = link_checker.check_method_status(link,
-                                                                        method)
-        except Exception as e:
-            logger.error(e)
-    print(json.dumps(result, indent=4))
+    process_links(links_to_check, link_checker, results, logger)
+
+    result_handler.handle_results(results, output_file="output.json",
+                                  display_output=True)
+
 
 
 if __name__ == "__main__":
