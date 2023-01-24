@@ -1,54 +1,56 @@
 import logging
-
 import arg_parser
 import logging_module
 import result_handler
 from link_checker import LinkChecker
 
 
-def process_links(links, link_checker, result, logger):
-    """
-    Process a list of links by validating them, checking their reachability and
-    checking the available methods on them.
-    :param links: List of links
-    :param link_checker: LinkChecker object
-    :param result: Dictionary to store the results
-    :param logger: Logger object
-    """
-    for link in links:
-        logging_module.handle_exception(
-            lambda: link_checker.validate_link(link), logger)
-        logging_module.handle_exception(
-            lambda: link_checker.check_link_reachability(link),
-            logger)
-
-        result[link] = {}
-        for method in link_checker.check_methods(link):
-            result[link][method] = link_checker.check_method_status(link,
-                                                                    method)
-
-
 def main():
     """
     Main function to run the program.
     """
-    args = arg_parser.parse_args()
+    # Parse the command line arguments
+    parsed_arguments = arg_parser.parse_args()
 
-    links_to_check = args.links
-    log_level = args.loglevel
-    output_file = args.output
+    # Retrieve the links to check, logging level and output file path
+    links = parsed_arguments.links
+    logging_level = parsed_arguments.loglevel
+    output_filepath = parsed_arguments.output
 
+    # Configure the logger
     logger = logging.getLogger()
-    logger.setLevel(log_level)
-    if not links_to_check:
-        print("The list of links is empty.")
+    logger.setLevel(logging_level)
+
+    # Exit if no links were provided
+    if not links:
+        print(
+            "No links were provided for checking. Please provide a list of "
+            "links and try again.")
         return
 
+    # Initialize the results dictionary and the link checker
     results = {}
     link_checker = LinkChecker()
-    process_links(links_to_check, link_checker, results, logger)
 
-    result_handler.handle_results(results, output_file="output.json",
+    # Check each link
+    for link in links:
+        # Validate the link
+        logging_module.handle_exception(
+            lambda: link_checker.validate_link(link), logger)
+
+        # Check the reachability of the link
+        logging_module.handle_exception(
+            lambda: link_checker.check_link_reachability(link),
+            logger)
+
+        # Retrieve the results for the link
+        results[link] = {}
+        for method in link_checker.check_methods(link):
+            results[link][method] = link_checker.check_method_status(link,
+                                                                     method)
+
+    # Handle the results
+    result_handler.handle_results(results, output_file=output_filepath,
                                   display_output=True)
 
 

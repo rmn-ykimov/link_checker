@@ -18,9 +18,9 @@ class LinkChecker:
 
     def validate_link(self, link: str) -> bool:
         """
-        Validate if the provided link is a valid and accessible URL.
+        Validate if the provided link is a valid URL.
         :param link: The link to be validated.
-        :return: True if the link is valid and accessible, False otherwise.
+        :return: True if the link is valid, False otherwise.
         """
         parsed_url = urlparse(link)
         # check if the link is valid or not
@@ -29,7 +29,8 @@ class LinkChecker:
         if parsed_url.scheme not in ['http', 'https']:
             raise Exception(f"The link {link} is not a valid http or https "
                             f"protocol link.")
-        return True
+        else:
+            return True
 
     def check_link_reachability(self, link: str, timeout: int = 5) -> bool:
         """
@@ -62,21 +63,21 @@ class LinkChecker:
             raise Exception(f"The link {link} redirects to another page.")
 
     def check_methods(self, link: str, timeout: int = 5) -> list:
-            """
-            Check available methods on a link.
-            :param link: Link to check methods on
-            :param timeout: The timeout for the requests in seconds.
-            :return: List of available methods
-            """
-            available_methods = []
-            for method in self.methods:
-                try:
-                    response = requests.request(method, link, timeout=timeout)
-                    if response.status_code != 405:
-                        available_methods.append(method)
-                except requests.exceptions.RequestException as e:
-                    logger.error(f"An error occurred: {e}")
-            return available_methods
+        """
+        Check available methods on a link.
+        :param link: Link to check methods on
+        :param timeout: The timeout for the requests in seconds.
+        :return: List of available methods
+        """
+        available_methods = []
+        for method in self.methods:
+            try:
+                response = requests.request(method, link, timeout=timeout)
+                if response.status_code != 405:
+                    available_methods.append(method)
+            except requests.exceptions.RequestException as e:
+                logger.error(f"An error occurred: {e}")
+        return available_methods
 
     def check_method_status(self, link: str, method: str) -> int:
         """
