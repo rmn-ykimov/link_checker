@@ -2,40 +2,40 @@ import pytest
 
 from ..tests.helpers.helpers import raise_exception
 
-valid_https_link = 'https://www.example.com'
-valid_http_link = 'http://www.example.com'
+valid_https_link_example_com = 'https://www.example.com'
+valid_http_link_example_com = 'http://www.example.com'
 empty_link = ''
 invalid_link = 'invalid_link'
-invalid_link_scheme = 'ftp://www.example.com'
+invalid_link_scheme_ftp = 'ftp://www.example.com'
 url_with_credentials = 'ftp://www.example.com'
-url_with_port_number = 'http://www.example.com:8080'
+url_with_port_number_8080 = 'http://www.example.com:8080'
 url_with_path_and_query = 'http://www.example.com/path?query=value'
 url_with_fragment = 'http://www.example.com/path#fragment'
 url_with_encoded_spaces = 'http://www.example.com/path%20with%20spaces'
 url_with_path_query_and_fragment = 'http://www.example.com/path?query=value#fragment'
 url_with_IPV6 = 'http://[::1]'
-url_with_IPV6_and_port = 'http://[::1]:8080'
+url_with_IPV6_and_port_8080 = 'http://[::1]:8080'
 url_with_query = 'http://www.example.com?query=value'
 url_with_path = 'http://www.example.com:8080/path'
 
 
 @pytest.mark.parametrize("link, expected", [
-    (valid_https_link, True),
+    (valid_https_link_example_com, True),
     # Test valid https link
-    (valid_http_link, True),
+    (valid_http_link_example_com, True),
     # Test valid http link
     (empty_link, Exception("The string {} is not a valid link.".format(''))),
     # Test empty link
     (invalid_link,
      Exception("The string {} is not a valid link.".format('invalid_link'))),
     # Test invalid link
-    (invalid_link_scheme, Exception("The link {} is not a valid http or "
+    (invalid_link_scheme_ftp, Exception("The link {} is not a valid http or "
                                     "https protocol link.".format(
         'ftp://www.example.com'))),
     # Test invalid link scheme
     (url_with_credentials, True),
     # Test url with credentials
-    (url_with_port_number, True),
+    (url_with_port_number_8080, True),
     # Test url with port number
     (url_with_path_and_query, True),
     # Test url with path and query
@@ -45,7 +45,7 @@ url_with_path = 'http://www.example.com:8080/path'
     # Test url with encoded spaces
     (url_with_path_query_and_fragment, True),
     # Test url with path, query and fragment
-    (url_with_IPV6_and_port, True),  # Test url with IPv6 and port number
+    (url_with_IPV6_and_port_8080, True),  # Test url with IPv6 and port number
     (url_with_IPV6, True),  # Test url with IPv6
     (url_with_query, True),  # Test url with query
     (url_with_path, True)  # Test url with path
