@@ -1,6 +1,6 @@
 import pytest
 
-from ..tests.helpers.helpers import raise_exception
+# from ..tests.helpers.helpers import raise_exception
 
 valid_https_link_example_com = 'https://www.example.com'
 valid_http_link_example_com = 'http://www.example.com'
