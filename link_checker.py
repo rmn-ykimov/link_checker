@@ -1,7 +1,14 @@
+"""
+This module contains a class `LinkChecker` that is used for validating links,
+checking their reachability, and checking available methods on them.
+It uses the requests library to make HTTP requests and the urllib.parse module
+to parse URLs.
+"""
+
 import logging
+from urllib.parse import urlparse
 import requests
 
-from urllib.parse import urlparse
 
 logger = logging.getLogger()
 logger.setLevel(logging.WARNING)
@@ -29,8 +36,7 @@ class LinkChecker:
         if parsed_url.scheme not in ['http', 'https']:
             raise Exception(f"The link {link} is not a valid http or https "
                             f"protocol link.")
-        else:
-            return True
+        return True
 
     def check_link_reachability(self, link: str, timeout: int = 5) -> bool:
         """
@@ -40,59 +46,42 @@ class LinkChecker:
         :return: True if the link is reachable, False otherwise.
         """
         try:
-            response = requests.head(link, allow_redirects=True,
-                                     timeout=timeout)
-            if response.ok:
+            # Send a HEAD request to the link with allow_redirects set to True
+            response = requests.head(link, allow_redirects=True, timeout=timeout)
+            # Check if the status code of the response is between 200 and 299 slash
+            if 200 <= response.status_code < 300:
+                # Check redirection
                 self.check_redirection(response, link)
                 return True
             else:
-                raise Exception(f"The link {link} is not reachable.")
+                return False
         except requests.exceptions.RequestException as e:
-            logger.error(
-                f"An error occurred while checking reachability of {link}. "
-                f"Error: {e}")
-            return False
+            # Log the error and re-raise it
+            logger.warning("An error occurred while checking link reachability. Error: %s", e)
+            raise e
 
     def check_redirection(self, response, link):
         """
-        Check if the provided link redirects to another page
-        :param response: The response of the link
-        :param link: The link to check redirection for
+        Check if the response is a redirection.
+        :param response: The response object.
+        :param link: The link that was checked.
         """
-        if response.status_code in [301, 302, 303, 307, 308]:
-            raise Exception(f"The link {link} redirects to another page.")
+        if 'location' in response.headers:
+            new_link = response.headers['location']
+            logger.warning("The link %s redirects to %s", link, new_link)
 
-    def check_methods(self, link: str, timeout: int = 5) -> list:
+    def check_methods(self, link: str) -> dict:
         """
-        Check available methods on a link.
-        :param link: Link to check methods on
-        :param timeout: The timeout for the requests in seconds.
-        :return: List of available methods
+        Check the available methods for a link.
+        :param link: The link to check available methods for.
+        :return: A dictionary containing the available methods and their statuses.
         """
-        available_methods = []
+        result = {}
         for method in self.methods:
             try:
-                response = requests.request(method, link, timeout=timeout)
-                if response.status_code != 405:
-                    available_methods.append(method)
+                response = requests.request(method, link)
+                result[method] = response.status_code
             except requests.exceptions.RequestException as e:
-                logger.error(f"An error occurred: {e}")
-        return available_methods
-
-    def check_method_status(self, link: str, method: str) -> int:
-        """
-        Check the status of a method on a link.
-        :param link: Link to check method on
-        :param method: Method to check
-        :return: HTTP status code of the method
-        """
-        try:
-            response = requests.request(method, link)
-            if response.status_code != 200:
-                raise Exception(
-                    f"Link returned status code {response.status_code}")
-            return response.status_code
-        except requests.exceptions.RequestException as e:
-            raise Exception(
-                f"An error occurred while checking {method} method for {link}."
-                f" Error: {e}")
+                result[method] = e
+                logger.warning("An error occurred while checking %s method for %s. Error: %s", method, link, e)
+        return result
