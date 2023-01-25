@@ -1,3 +1,10 @@
 .idea
 .pytest_cache
+.testallure-results
+.vscode
+
+report.html
+
+allure-results
+venv
 tests/.pytest_cache
