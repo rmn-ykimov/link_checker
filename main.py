@@ -1,9 +1,16 @@
+"""
+This script is a link checker. It reads a list of links from command line arguments
+and checks their validity and reachability.
+The script uses argparse to parse command-line arguments, logging to handle logging,
+logging_module to handle exceptions, and result_handler to handle the final results.
+The LinkChecker class from the link_checker module is used to perform the link checks.
+The results are output to a specified file or to the terminal.
+"""
 import logging
 import arg_parser
 import logging_module
 import result_handler
 from link_checker import LinkChecker
-
 
 def main():
     """
@@ -36,18 +43,18 @@ def main():
     for link in links:
         # Validate the link
         logging_module.handle_exception(
-            lambda: link_checker.validate_link(link), logger)
+            lambda link=link: link_checker.validate_link(link), logger)
 
         # Check the reachability of the link
         logging_module.handle_exception(
-            lambda: link_checker.check_link_reachability(link),
+            lambda link=link: link_checker.check_link_reachability(link),
             logger)
 
         # Retrieve the results for the link
-        results[link] = {}
-        for method in link_checker.check_methods(link):
-            results[link][method] = link_checker.check_method_status(link,
-                                                                     method)
+        results[link] = link_checker.check_methods(link)
+
+
+
 
     # Handle the results
     result_handler.handle_results(results, output_file=output_filepath,

@@ -1,10 +1,3 @@
-"""
-This module contains a class `LinkChecker` that is used for validating links,
-checking their reachability, and checking available methods on them.
-It uses the requests library to make HTTP requests and the urllib.parse module
-to parse URLs.
-"""
-
 import logging
 from urllib.parse import urlparse
 import requests
@@ -57,7 +50,7 @@ class LinkChecker:
                 return False
         except requests.exceptions.RequestException as e:
             # Log the error and re-raise it
-            logger.warning("An error occurred while checking link reachability. Error: %s", e)
+            logger.warning("An error occurred while checking link reachability for %s. Error: %s", link, e)
             raise e
 
     def check_redirection(self, response, link):
@@ -82,6 +75,6 @@ class LinkChecker:
                 response = requests.request(method, link)
                 result[method] = response.status_code
             except requests.exceptions.RequestException as e:
-                result[method] = e
+                result[method] = str(e)
                 logger.warning("An error occurred while checking %s method for %s. Error: %s", method, link, e)
         return result
