@@ -1,3 +1,7 @@
+# **THIS REPO IS ARCHIVED**
+
+---
+
 # Link Checker
 
 Link Checker is a command-line tool that checks the validity and reachability
